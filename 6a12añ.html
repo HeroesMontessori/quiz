@@ -1,0 +1,285 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz Montessori 6 a 12 años</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+            color: #333;
+        }
+        .container {
+            width: 90%;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .progress-bar {
+            width: 100%;
+            background-color: #e0e0e0;
+            border-radius: 8px;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+        .progress-bar span {
+            display: block;
+            height: 20px;
+            width: 0;
+            background-color: #4caf50;
+            text-align: center;
+            line-height: 20px;
+            color: #fff;
+            transition: width 0.3s;
+        }
+        .question {
+            margin-bottom: 20px;
+        }
+        .question h2 {
+            margin-top: 0;
+            color: #4caf50;
+            font-size: 1.2em;
+        }
+        .answers {
+            list-style: none;
+            padding: 0;
+        }
+        .answers li {
+            margin-bottom: 10px;
+            font-size: 1em;
+        }
+        .answers input {
+            margin-right: 10px;
+        }
+        .hidden {
+            display: none;
+        }
+        .form-container {
+            margin-top: 20px;
+        }
+        .form-container input, .form-container button {
+            display: block;
+            width: 100%;
+            margin: 10px 0;
+            padding: 10px;
+            font-size: 1em;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .form-container button {
+            background-color: #4caf50;
+            color: #fff;
+            border: none;
+            cursor: pointer;
+        }
+        .form-container button:hover {
+            background-color: #45a049;
+        }
+        .motivation {
+            background-color: #e8f5e9;
+            border-left: 5px solid #4caf50;
+            padding: 10px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+            font-style: italic;
+            font-size: 1em;
+        }
+        .motivational-heading {
+            color: #4caf50;
+        }
+        .error {
+            color: red;
+            font-style: italic;
+            display: none;
+        }
+        .confirmation {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Descubre si tienes lo necesario para ser tu propia guía Montessori en casa</h1>
+        <div class="progress-bar">
+            <span id="progress-bar">0%</span>
+        </div>
+        
+        <div id="quiz">
+            <!-- Motivación Inicial -->
+            <div class="motivation">
+                <p>Responde estas preguntas para averiguarlo.</p>
+            </div>
+            
+            <!-- Confirmación de Respuesta -->
+            <div class="confirmation" id="confirmation-message">
+                <p></p>
+            </div>
+            
+            <!-- Pregunta -->
+            <div class="question" id="question">
+                <!-- Questions will be dynamically injected here -->
+            </div>
+        </div>
+        
+        <div id="thank-you" class="hidden">
+            <h2>¡Gracias por completar el quiz!</h2>
+            <p>¿Quieres conocer el resutado? Por favor, déjanos tu nombre y correo electrónico</p>
+            <div class="form-container">
+                <form id="contact-form" action="https://docs.google.com/forms/d/e/YOUR_FORM_ID/formResponse" method="POST" target="_blank" onsubmit="return redirectToResults()">
+                    <input type="text" name="entry.1234567890" placeholder="Nombre completo" required>
+                    <input type="email" name="entry.0987654321" placeholder="Correo electrónico" required>
+                    <button type="submit">Obtener resultados</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        const questions = [
+            {
+                text: "¿Estás Fomentando la Autonomía y Responsabilidad en tu Hijo? ¿Tu hijo tiene responsabilidades en casa, como organizar su habitación o ayudar en la cocina?",
+                answers: {
+                    a: "No, prefiero que se enfoque en sus estudios.",
+                    b: "Sí, tiene pequeñas tareas que realiza diariamente."
+                }
+            },
+            {
+                text: "¿Dejas que tu hijo explore sus intereses personales sin dirigir su tiempo libre?",
+                answers: {
+                    a: "Prefiero controlar sus actividades.",
+                    b: "Sí, tiene libertad para explorar sus pasiones."
+                }
+            },
+            {
+                text: "¿Permites que tu hijo gestione su tiempo en cuanto a deberes y ocio?",
+                answers: {
+                    a: "Prefiero organizar su día por él.",
+                    b: "Sí, le ayudo a gestionar su tiempo de manera autónoma."
+                }
+            },
+            {
+                text: "¿Cómo reaccionas cuando tu hijo comete un error en sus responsabilidades?",
+                answers: {
+                    a: "Le corrijo de inmediato para evitar errores futuros.",
+                    b: "Le dejo aprender de sus errores para mejorar la próxima vez."
+                }
+            },
+            {
+                text: "¿Tu hijo participa en la toma de decisiones familiares sencillas?",
+                answers: {
+                    a: "No, prefiero tomar decisiones por él.",
+                    b: "Sí, le damos opciones y lo incluimos en las decisiones."
+                }
+            }
+        ];
+
+        let questionOrder = [];
+        let questionIndex = 0;
+
+        function generateQuestionOrder() {
+            questionOrder = [];
+            const allQuestions = [...questions];
+            while (questionOrder.length < 3) {
+                const index = Math.floor(Math.random() * allQuestions.length);
+                questionOrder.push(allQuestions.splice(index, 1)[0]);
+            }
+        }
+
+        function renderQuestion() {
+            const current = questionOrder[questionIndex];
+            if (!current) return;
+            const questionDiv = document.getElementById('question');
+            questionDiv.innerHTML = `
+                <h2 class="motivational-heading">${current.text}</h2>
+                <ul class="answers">
+                    <li><input type="radio" name="question" value="a" id="a"> <label for="a">${current.answers.a}</label></li>
+                    <li><input type="radio" name="question" value="b" id="b"> <label for="b">${current.answers.b}</label></li>
+                </ul>
+                <span class="error" id="error">Por favor, selecciona una opción.</span>
+                <button onclick="nextQuestion()">Siguiente</button>
+            `;
+        }
+
+        function nextQuestion() {
+            if (validateAnswer()) {
+                const message = generateConfirmationMessage();
+                document.getElementById('confirmation-message').querySelector('p').innerText = message;
+                document.getElementById('confirmation-message').style.display = 'block';
+                setTimeout(() => {
+                    document.getElementById('confirmation-message').style.display = 'none';
+                    questionIndex++;
+                    if (questionIndex < questionOrder.length) {
+                        renderQuestion();
+                        updateProgressBar();
+                    } else {
+                        document.getElementById('quiz').classList.add('hidden');
+                        document.getElementById('thank-you').classList.remove('hidden');
+                        updateProgressBar(); // Ensure the final progress is set to 100%
+                    }
+                }, 4000); // Display confirmation for 4 seconds
+            }
+        }
+
+        function updateProgressBar() {
+            // Advance by 33.33% for each question
+            const progress = (questionIndex / 2) * 33.33; // 33.33% per question
+            document.getElementById('progress-bar').style.width = progress + '%';
+            document.getElementById('progress-bar').innerText = Math.round(progress) + '%';
+        }
+
+        function validateAnswer() {
+            const selectedOption = document.querySelector('input[name="question"]:checked');
+            if (!selectedOption) {
+                document.getElementById('error').style.display = 'block';
+                return false;
+            } else {
+                document.getElementById('error').style.display = 'none';
+                return true;
+            }
+        }
+
+        function generateConfirmationMessage() {
+            const selectedAnswer = document.querySelector('input[name="question"]:checked').value;
+            const messages = {
+                a: [
+                    "¡Eres el pilar en el que tu hijo construye su confianza!",
+                    "¡Tu dedicación es el motor de su crecimiento!",
+                    "¡Tu guía le está preparando para enfrentar el mundo!"
+                ],
+                b: [
+                    "¡Estás haciendo un trabajo increíble guiándolo!",
+                    "Estás criando a alguien lleno de confianza y autonomía.",
+                    "¡Qué afortunado es de tenerte como guía!"
+                ]
+            };
+            return messages[selectedAnswer][Math.floor(Math.random() * messages[selectedAnswer].length)];
+        }
+
+        function redirectToResults() {
+            window.location.href = 'https://educaciongloballatam.github.io/Montessori_Independencia_Y_Creatividad/';
+            return false; // Prevent form submission
+        }
+
+        // Initialize quiz
+        function initQuiz() {
+            generateQuestionOrder();
+            renderQuestion();
+        }
+
+        // Start quiz on page load
+        window.onload = initQuiz;
+    </script>
+</body>
+</html>
